@@ -1,5 +1,8 @@
 <!doctype html><html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Matrix</title><link rel="stylesheet" href="./assets/styles.css"></head>
+<title>Matrix</title><link rel="stylesheet" href="./assets/styles.css">
+<style>
+  .matrix-divider{height:8px;background:#d40000;border-radius:6px;margin:10px 0;}
+</style></head>
 <body><header class="header"><div class="header-inner"><div class="brand"><span class="dot"></span> Matrix</div>
 <div class="toolbar"><a class="nav" href="./index.html">Onderdeel kiezen</a><a class="nav" href="./overzicht.html">Medaillespiegel</a><a class="nav" href="./edit.html">Teksten bewerken</a><a class="nav" href="./onderdelen.html">Onderdelen bewerken</a><a class="nav" href="./pr.html">PR-overzicht</a></div></div></header>
 
@@ -42,23 +45,24 @@ const WOMEN = [
   {pos:15, label:'3e 1000m', onderdeel:'1000 Meter WOMEN', place:'derde'},
 ];
 
-// Mannen-matrix
+// NB: Mannen-matrix is een logische tegenhanger (500/1000/1500/5000/10000 + Mass Start).
+// Pas dit gerust aan als je een andere volgorde of afstanden wil.
 const MEN = [
-  {pos:1, label:'Mass Start', onderdeel:'Mass Start MEN', place:'eerste'},
-  {pos:2, label:'1e 1000m', onderdeel:'1000 Meter MEN', place:'eerste'},
-  {pos:3, label:'1e 500m', onderdeel:'500 Meter MEN', place:'eerste'},
-  {pos:4, label:'1e 1500m', onderdeel:'1500 Meter MEN', place:'eerste'},
-  {pos:5, label:'2e 1000m', onderdeel:'1000 Meter MEN', place:'tweede'},
-  {pos:6, label:'1e 5000m', onderdeel:'5000 Meter MEN', place:'eerste'},
-  {pos:7, label:'3e 1000m', onderdeel:'1000 Meter MEN', place:'derde'},
-  {pos:8, label:'2e 5000m', onderdeel:'5000 Meter MEN', place:'tweede'},
+  {pos:1, label:'1e 500m', onderdeel:'500 Meter MEN', place:'eerste'},
+  {pos:2, label:'1e 1500m', onderdeel:'1500 Meter MEN', place:'eerste'},
+  {pos:3, label:'Mass Start', onderdeel:'Mass Start MEN', place:'eerste'},
+  {pos:4, label:'1e 5000m', onderdeel:'5000 Meter MEN', place:'eerste'},
+  {pos:5, label:'1e 1000m', onderdeel:'1000 Meter MEN', place:'eerste'},
+  {pos:6, label:'1e 10000m', onderdeel:'10000 Meter MEN', place:'eerste'},
+  {pos:7, label:'2e 1000m', onderdeel:'1000 Meter MEN', place:'tweede'},
+  {pos:8, label:'2e 10000m', onderdeel:'10000 Meter MEN', place:'tweede'},
   {pos:9, label:'2e 1500m', onderdeel:'1500 Meter MEN', place:'tweede'},
-  {pos:10, label:'1e 10.000m', onderdeel:'10000 Meter MEN', place:'eerste'},
+  {pos:10, label:'2e 5000m', onderdeel:'5000 Meter MEN', place:'tweede'},
   {pos:11, label:'2e 500m', onderdeel:'500 Meter MEN', place:'tweede'},
-  {pos:12, label:'3e 1500m', onderdeel:'1500 Meter MEN', place:'derde'},
+  {pos:12, label:'3e 500m', onderdeel:'500 Meter MEN', place:'derde'},
   {pos:13, label:'3e 5000m', onderdeel:'5000 Meter MEN', place:'derde'},
-  {pos:14, label:'3e 500m', onderdeel:'500 Meter MEN', place:'derde'},
-  {pos:15, label:'2e 10.000m', onderdeel:'10000 Meter MEN', place:'tweede'},
+  {pos:14, label:'3e 1500m', onderdeel:'1500 Meter MEN', place:'derde'},
+  {pos:15, label:'3e 1000m', onderdeel:'1000 Meter MEN', place:'derde'},
 ];
 
 function getModeFromUrl(){
@@ -94,6 +98,25 @@ function formatLine({naam, team, tijd}){
   return parts.join(' ');
 }
 
+function normalizeName(s){
+  return (s||'').toLowerCase().replace(/\s+/g,' ').trim();
+}
+
+function countDuplicatesTop9(items){
+  const seen = new Set();
+  let total = 0;
+  items.filter(it => it.pos <= 9).forEach(it=>{
+    const canonical = ScriptUtils.canonicalOnderdeel ? ScriptUtils.canonicalOnderdeel(it.onderdeel) : (it.onderdeel||'').toUpperCase();
+    const data = readPlacement(canonical, it.place);
+    const name = normalizeName(data.naam);
+    if(!name) return;
+    total += 1;
+    seen.add(name);
+  });
+  return Math.max(0, total - seen.size);
+}
+
+
 function render(mode){
   const grid=document.getElementById('matrix-grid');
   const note=document.getElementById('matrix-note');
@@ -104,6 +127,9 @@ function render(mode){
   btnM.classList.toggle('active', mode==='men');
 
   const items = mode==='women' ? WOMEN : MEN;
+
+  const dupCount = countDuplicatesTop9(items);
+  const dividerPos = Math.min(items.length, 9 + dupCount);
 
   grid.innerHTML='';
   let missing = 0;
@@ -127,6 +153,12 @@ function render(mode){
       </div>
     `;
     grid.appendChild(cell);
+
+    if(it.pos===dividerPos){
+      const div=document.createElement('div');
+      div.className='matrix-divider';
+      grid.appendChild(div);
+    }
   });
 
   if(missing>0){
