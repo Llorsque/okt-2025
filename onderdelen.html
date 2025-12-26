@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Onderdelen bewerken</title>
+  <link rel="stylesheet" href="./assets/styles.css">
+</head>
+<body>
+<header class="header">
+  <div class="header-inner">
+    <div class="brand"><span class="dot"></span> Huldiging Scripts</div>
+    <div class="toolbar">
+      <a class="nav" href="./index.html">Onderdeel kiezen</a>
+      <a class="nav" href="./overzicht.html">Medaillespiegel</a><a class="nav" href="./matrix.html">Matrix</a>
+      <a class="nav" href="./pr.html">PR-overzicht</a>
+      <a class="nav" href="./edit.html">Teksten bewerken</a>
+      <a class="nav" href="./onderdelen.html">Onderdelen bewerken</a>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+  <div class="card">
+    <h1>Onderdelen bewerken</h1>
+    <p class="small">
+      Eén onderdeel per regel. Dit bepaalt de dropdown op <strong>Onderdeel kiezen</strong>.
+      <br>
+      Tip: met <strong>Export alles</strong> neem je ook alle ingevulde inhoud van alle onderdelen mee (teksten + ingevulde velden).
+    </p>
+
+    <label for="lijst">Onderdelenlijst</label>
+    <textarea id="lijst" rows="16" style="width:100%;"></textarea>
+
+    <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:14px">
+      <button id="saveBtn" type="button">Opslaan</button>
+      <button class="secondary" id="resetBtn" type="button">Reset naar standaard</button>
+      <button class="secondary" id="exportPartsBtn" type="button">JSON export (onderdelen)</button>
+      <button class="secondary" id="importPartsBtn" type="button">JSON import (onderdelen)</button>
+      <button class="secondary" id="exportAllBtn" type="button">Export alles (JSON)</button>
+      <button class="secondary" id="importAllBtn" type="button">Import alles (JSON)</button>
+      <input id="filePicker" type="file" accept="application/json" style="display:none" />
+    </div>
+
+    <p id="status" class="small" style="margin-top:10px"></p>
+  </div>
+</div>
+
+<footer>© 2025 – Huldiging Scripts</footer>
+
+<script src="./assets/app.js?v=exportall1"></script>
+<script>
+(function(){
+  const ta = document.getElementById('lijst');
+  const status = document.getElementById('status');
+  const filePicker = document.getElementById('filePicker');
+
+  function setStatus(msg){ status.textContent = msg || ''; }
+
+  function render(){
+    const parts = ScriptUtils.getOnderdelen();
+    ta.value = parts.join('\n');
+    setStatus('');
+  }
+
+  function parseLines(text){
+    return String(text||'')
+      .split(/\r?\n/)
+      .map(s=>s.trim())
+      .filter(Boolean);
+  }
+
+  function downloadJson(obj, filename){
+    const blob = new Blob([JSON.stringify(obj, null, 2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+  }
+
+  document.getElementById('saveBtn').addEventListener('click', ()=>{
+    const list = parseLines(ta.value);
+    const saved = ScriptUtils.setOnderdelen(list);
+    ta.value = saved.join('\n');
+    setStatus('Opgeslagen ✅');
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', ()=>{
+    if(!confirm('Weet je zeker dat je de onderdelenlijst wilt terugzetten naar standaard?')) return;
+    const saved = ScriptUtils.resetOnderdelen();
+    ta.value = saved.join('\n');
+    setStatus('Teruggezet naar standaard ✅');
+  });
+
+  // Parts-only export/import
+  document.getElementById('exportPartsBtn').addEventListener('click', ()=>{
+    const obj = { version: 1, exportedAt: new Date().toISOString(), onderdelen: ScriptUtils.getOnderdelen() };
+    downloadJson(obj, 'onderdelen.json');
+    setStatus('Onderdelen geëxporteerd ✅');
+  });
+
+  document.getElementById('importPartsBtn').addEventListener('click', ()=>{
+    filePicker.dataset.mode = 'parts';
+    filePicker.value = '';
+    filePicker.click();
+  });
+
+  // Export all: onderdelen + teksten + alle ingevulde velden per onderdeel
+  document.getElementById('exportAllBtn').addEventListener('click', ()=>{
+    const obj = ScriptUtils.exportAll();
+    downloadJson(obj, 'huldigingen-export-all.json');
+    setStatus('Alles geëxporteerd ✅');
+  });
+
+  document.getElementById('importAllBtn').addEventListener('click', ()=>{
+    filePicker.dataset.mode = 'all';
+    filePicker.value = '';
+    filePicker.click();
+  });
+
+  filePicker.addEventListener('change', async (e)=>{
+    const mode = filePicker.dataset.mode || 'parts';
+    const file = e.target.files && e.target.files[0];
+    if(!file) return;
+
+    try{
+      const text = await file.text();
+      const obj = JSON.parse(text);
+
+      if(mode === 'parts'){
+        const list = Array.isArray(obj) ? obj : (obj && Array.isArray(obj.onderdelen) ? obj.onderdelen : null);
+        if(!list) throw new Error('JSON heeft geen onderdelenlijst gevonden.');
+        const saved = ScriptUtils.setOnderdelen(list);
+        ta.value = saved.join('\n');
+        setStatus('Onderdelen geïmporteerd ✅');
+      }else{
+        if(!confirm('Import alles overschrijft jouw huidige ingevulde inhoud (alle onderdelen + teksten). Doorgaan?')) return;
+        ScriptUtils.importAll(obj, {clearExisting:true});
+        // opnieuw renderen
+        ta.value = ScriptUtils.getOnderdelen().join('\n');
+        setStatus('Alles geïmporteerd ✅');
+      }
+    }catch(err){
+      alert('Import mislukt: ' + (err && err.message ? err.message : err));
+    }
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

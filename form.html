@@ -1,0 +1,80 @@
+
+<!doctype html><html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Huldiging – Formulier</title><link rel="stylesheet" href="./assets/styles.css"></head>
+<body>
+<header class="header"><div class="header-inner">
+  <div class="brand"><span class="dot"></span> Huldiging – <span id="onderdeel-title"></span></div>
+  <div class="toolbar"><a class="nav" href="./index.html">Onderdeel kiezen</a><a class="nav" href="./overzicht.html">Medaillespiegel</a><a class="nav" href="./matrix.html">Matrix</a><a class="nav" href="./edit.html">Teksten bewerken</a><a class="nav" href="./onderdelen.html">Onderdelen bewerken</a><a class="nav" href="./pr.html">PR-overzicht</a>
+  <button class="secondary" data-action="edit">Bewerken</button><button data-action="save">Opslaan</button><button data-action="clear">Leeg formulier</button></div></div></header>
+<div class="container">
+  <div class="card"><h1>Invulblok</h1>
+    <form data-form="invulblok">
+      <fieldset><legend>Onderdeel</legend><input data-key="onderdeel" type="text" disabled></fieldset>
+      <fieldset><legend>Uitreikers</legend>
+        <div class="form-grid-2">
+          <div><label>Medailles – Naam</label><input data-key="uitreiker_medailles_naam" type="text"></div>
+          <div><label>Medailles – Functie</label><input data-key="uitreiker_medailles_functie" type="text"></div>
+          <div><label>Bloemen – Naam</label><input data-key="uitreiker_bloemen_naam" type="text"></div>
+          <div><label>Bloemen – Functie</label><input data-key="uitreiker_bloemen_functie" type="text"></div>
+        </div>
+        <div style="height:8px"></div><label><strong>Extra bij uitreiken</strong> (optioneel)</label><input data-key="uitreikers_extra" type="text" placeholder="bijv. Met dank aan de vrijwilligers van Thialf">
+      </fieldset>
+      <fieldset><legend>1e plaats</legend><div class="form-grid">
+        <div><label>Naam</label><input data-key="eerste_naam" type="text"></div>
+        <div><label>Tijd</label><input data-key="eerste_tijd" type="text"></div>
+        <div><label>Team</label><input data-key="eerste_team" type="text"></div>
+        <div><label>Bijzonderheden</label><input data-key="eerste_bijz" type="text"></div>
+      </div></fieldset>
+      <fieldset><legend>2e plaats</legend><div class="form-grid">
+        <div><label>Naam</label><input data-key="tweede_naam" type="text"></div>
+        <div><label>Tijd</label><input data-key="tweede_tijd" type="text"></div>
+        <div><label>Team</label><input data-key="tweede_team" type="text"></div>
+        <div><label>Bijzonderheden</label><input data-key="tweede_bijz" type="text"></div>
+      </div></fieldset>
+      <fieldset><legend>3e plaats</legend><div class="form-grid">
+        <div><label>Naam</label><input data-key="derde_naam" type="text"></div>
+        <div><label>Tijd</label><input data-key="derde_tijd" type="text"></div>
+        <div><label>Team</label><input data-key="derde_team" type="text"></div>
+        <div><label>Bijzonderheden</label><input data-key="derde_bijz" type="text"></div>
+      </div></fieldset>
+    </form>
+  </div>
+  <div class="card"><h1>Presentatietekst</h1><div class="bundles"></div></div>
+</div>
+<footer>© 2025 – Huldiging Scripts</footer>
+<script src="./assets/app.js?v=exportall1"></script>
+<script>
+const params=new URLSearchParams(location.search); const onderdeelRaw=params.get('onderdeel')||'Onbekend onderdeel'; const onderdeel=onderdeelRaw.toUpperCase();
+document.getElementById('onderdeel-title').textContent=onderdeel;
+const form=document.querySelector('form[data-form="invulblok"]'); const wrap=document.querySelector('.bundles');
+const inputs=[...form.querySelectorAll('input[data-key]')]; let isEditing=true, activeIdx=0;
+inputs.find(i=>i.dataset.key==='onderdeel').value=onderdeel;
+function cur(){const d={}; inputs.forEach(i=>d[i.dataset.key]=i.value.trim()); return d;}
+function load(){const d=ScriptUtils.readData(onderdeel); inputs.forEach(i=>{ if(d[i.dataset.key]!=null){ i.value=d[i.dataset.key]; } });}
+function saveStore(){ScriptUtils.writeData(onderdeel,cur());}
+function escapeHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function addPhtml(el,html){const p=document.createElement('p'); p.style.margin='0 0 6px'; p.innerHTML=html; el.appendChild(p);}
+function fmt(tpl,map){const plain=tpl.replace(/{{\s*([\w_]+)\s*}}/g,(_,k)=>(map[k]??'')); let html=escapeHtml(plain); html=html.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/__(.+?)__/g,'<strong>$1</strong>'); return html;}
+function render(){const d=cur(); wrap.innerHTML='';
+  function bundle(t,arr,note=''){const b=document.createElement('div'); b.className='bundle'; const h=document.createElement('h3'); h.textContent=t; b.appendChild(h); arr.forEach(t=>addPhtml(b,t)); if(note){const n=document.createElement('div'); n.className='note'; n.textContent=note; b.appendChild(n);} wrap.appendChild(b); return b;}
+  const T=ScriptUtils.getBundleTexts();
+  bundle('PRIJSUITREIKING',[fmt(T.prijsuitreiking,{onderdeel})]);
+  bundle('BRONS',[fmt(T.brons_1,{tijd:d.derde_tijd}),fmt(T.brons_2,{team:d.derde_team}),fmt(T.brons_3,{naam:d.derde_naam})], d.derde_bijz||'');
+  const uitM=[d.uitreiker_medailles_naam,d.uitreiker_medailles_functie].filter(Boolean).join(', '); const uitB=[d.uitreiker_bloemen_naam,d.uitreiker_bloemen_functie].filter(Boolean).join(', ');
+  const bu=bundle('UITREIKERS',[fmt(T.uit_medailles,{naam_functie:uitM||'(naam, functie)'}),fmt(T.uit_bloemen,{naam_functie:uitB||'(naam, functie)'})]);
+  const extra=d.uitreikers_extra||''; const extraEl=document.createElement('div'); if(extra){extraEl.className='note'; extraEl.textContent=extra;} else {extraEl.className='filler'; extraEl.innerHTML='&nbsp;';} bu.appendChild(extraEl);
+  bundle('ZILVER',[fmt(T.zilver_1,{tijd:d.tweede_tijd}),fmt(T.zilver_2,{team:d.tweede_team}),fmt(T.zilver_3,{naam:d.tweede_naam})], d.tweede_bijz||'');
+  bundle('GOUD',[fmt(T.goud_1,{onderdeel}),fmt(T.goud_2,{tijd:d.eerste_tijd}),fmt(T.goud_3,{team:d.eerste_team}),fmt(T.goud_4,{naam:d.eerste_naam})], d.eerste_bijz||'');
+  bundle('VOLKSLIED',[T.volkslied]);
+  bundle('APPLAUS & PODIUM',[fmt(T.applaus,{onderdeel}),fmt(T.podium_3,{naam:d.derde_naam}),fmt(T.podium_2,{naam:d.tweede_naam}),fmt(T.podium_1,{naam:d.eerste_naam})]);
+  setActive(activeIdx,{scroll:false});
+}
+function setActive(i,{scroll=true}={}){const items=[...document.querySelectorAll('.bundle')]; if(!items.length)return; if(i<0)i=0; if(i>=items.length)i=items.length-1; activeIdx=i; items.forEach((el,idx)=>el.classList.toggle('active',idx===activeIdx)); if(scroll&&!isEditing){items[activeIdx].scrollIntoView({behavior:'smooth',block:'center'});}}
+function setEditing(on){isEditing=on; document.body.classList.toggle('locked',!on); inputs.forEach(inp=>{inp.disabled=!on || inp.dataset.key==='onderdeel';}); document.querySelector('[data-action=edit]').disabled=on; document.querySelector('[data-action=save]').disabled=!on;}
+function save(){saveStore(); render(); setEditing(false); setActive(activeIdx,{scroll:true}); const n=document.createElement('div'); n.textContent='Opgeslagen'; n.style.position='fixed'; n.style.right='18px'; n.style.bottom='18px'; n.style.background='var(--blue)'; n.style.color='white'; n.style.padding='10px 14px'; n.style.borderRadius='10px'; n.style.boxShadow='0 8px 20px rgba(17,24,39,.2)'; n.style.zIndex='9999'; n.style.fontWeight='600'; document.body.appendChild(n); setTimeout(()=>n.remove(),1400);}
+document.addEventListener('keydown',e=>{if(e.key==='ArrowDown'){e.preventDefault(); setActive(activeIdx+1,{scroll:true});} else if(e.key==='ArrowUp'){e.preventDefault(); setActive(activeIdx-1,{scroll:true});}});
+form.addEventListener('input',render); document.querySelector('[data-action=edit]').addEventListener('click',()=>setEditing(true)); document.querySelector('[data-action=save]').addEventListener('click',save);
+document.querySelector('[data-action=clear]').addEventListener('click',()=>{ localStorage.removeItem(ScriptUtils.keyFor(onderdeel)); inputs.forEach(i=>{ if(i.dataset.key!=='onderdeel'){ i.value=''; }}); render(); });
+setEditing(true); load(); render(); setActive(0,{scroll:false});
+</script>
+</body></html>

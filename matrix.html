@@ -1,0 +1,150 @@
+<!doctype html><html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Matrix</title><link rel="stylesheet" href="./assets/styles.css"></head>
+<body><header class="header"><div class="header-inner"><div class="brand"><span class="dot"></span> Matrix</div>
+<div class="toolbar"><a class="nav" href="./index.html">Onderdeel kiezen</a><a class="nav" href="./overzicht.html">Medaillespiegel</a><a class="nav" href="./edit.html">Teksten bewerken</a><a class="nav" href="./onderdelen.html">Onderdelen bewerken</a><a class="nav" href="./pr.html">PR-overzicht</a></div></div></header>
+
+<div class="container">
+  <div class="card">
+    <div class="matrix-head">
+      <h1 style="margin:0">Matrix</h1>
+      <div class="segmented" role="tablist" aria-label="Matrix kiezen">
+        <button id="btn-women" class="secondary" type="button">Vrouwen</button>
+        <button id="btn-men" class="secondary" type="button">Mannen</button>
+      </div>
+    </div>
+
+    <p class="small" style="margin-top:10px">Elke plek toont automatisch de gekoppelde uitslag (naam, team en tijd) op basis van de ingevulde formulieren.</p>
+
+    <div id="matrix-grid" class="matrix-grid" aria-live="polite"></div>
+    <div id="matrix-note" class="note" style="display:none;margin-top:12px"></div>
+  </div>
+</div>
+
+<footer>© 2025 – Huldiging Scripts</footer>
+
+<script src="./assets/app.js?v=exportall1"></script>
+<script>
+const WOMEN = [
+  {pos:1, label:'1e 500m', onderdeel:'500 Meter WOMEN', place:'eerste'},
+  {pos:2, label:'1e 1500m', onderdeel:'1500 Meter WOMEN', place:'eerste'},
+  {pos:3, label:'Mass Start', onderdeel:'Mass Start WOMEN', place:'eerste'},
+  {pos:4, label:'1e 3000m', onderdeel:'3000 Meter WOMEN', place:'eerste'},
+  {pos:5, label:'1e 1000m', onderdeel:'1000 Meter WOMEN', place:'eerste'},
+  {pos:6, label:'1e 5000m', onderdeel:'5000 Meter WOMEN', place:'eerste'},
+  {pos:7, label:'2e 1000m', onderdeel:'1000 Meter WOMEN', place:'tweede'},
+  {pos:8, label:'2e 5000m', onderdeel:'5000 Meter WOMEN', place:'tweede'},
+  {pos:9, label:'2e 1500m', onderdeel:'1500 Meter WOMEN', place:'tweede'},
+  {pos:10, label:'2e 3000m', onderdeel:'3000 Meter WOMEN', place:'tweede'},
+  {pos:11, label:'2e 500m', onderdeel:'500 Meter WOMEN', place:'tweede'},
+  {pos:12, label:'3e 500m', onderdeel:'500 Meter WOMEN', place:'derde'},
+  {pos:13, label:'3e 3000m', onderdeel:'3000 Meter WOMEN', place:'derde'},
+  {pos:14, label:'3e 1500m', onderdeel:'1500 Meter WOMEN', place:'derde'},
+  {pos:15, label:'3e 1000m', onderdeel:'1000 Meter WOMEN', place:'derde'},
+];
+
+// NB: Mannen-matrix is een logische tegenhanger (500/1000/1500/5000/10000 + Mass Start).
+// Pas dit gerust aan als je een andere volgorde of afstanden wil.
+const MEN = [
+  {pos:1, label:'1e 500m', onderdeel:'500 Meter MEN', place:'eerste'},
+  {pos:2, label:'1e 1500m', onderdeel:'1500 Meter MEN', place:'eerste'},
+  {pos:3, label:'Mass Start', onderdeel:'Mass Start MEN', place:'eerste'},
+  {pos:4, label:'1e 5000m', onderdeel:'5000 Meter MEN', place:'eerste'},
+  {pos:5, label:'1e 1000m', onderdeel:'1000 Meter MEN', place:'eerste'},
+  {pos:6, label:'1e 10000m', onderdeel:'10000 Meter MEN', place:'eerste'},
+  {pos:7, label:'2e 1000m', onderdeel:'1000 Meter MEN', place:'tweede'},
+  {pos:8, label:'2e 10000m', onderdeel:'10000 Meter MEN', place:'tweede'},
+  {pos:9, label:'2e 1500m', onderdeel:'1500 Meter MEN', place:'tweede'},
+  {pos:10, label:'2e 5000m', onderdeel:'5000 Meter MEN', place:'tweede'},
+  {pos:11, label:'2e 500m', onderdeel:'500 Meter MEN', place:'tweede'},
+  {pos:12, label:'3e 500m', onderdeel:'500 Meter MEN', place:'derde'},
+  {pos:13, label:'3e 5000m', onderdeel:'5000 Meter MEN', place:'derde'},
+  {pos:14, label:'3e 1500m', onderdeel:'1500 Meter MEN', place:'derde'},
+  {pos:15, label:'3e 1000m', onderdeel:'1000 Meter MEN', place:'derde'},
+];
+
+function getModeFromUrl(){
+  const params=new URLSearchParams(location.search);
+  const raw=(params.get('sex')||'women').toLowerCase();
+  return raw==='men' ? 'men' : 'women';
+}
+
+function setModeInUrl(mode){
+  const params=new URLSearchParams(location.search);
+  params.set('sex', mode);
+  const url = location.pathname + '?' + params.toString();
+  history.replaceState(null,'',url);
+}
+
+function readPlacement(onderdeel, place){
+  const d = ScriptUtils.readData(onderdeel);
+  const naam = (d[place + '_naam'] || '').trim();
+  const team = (d[place + '_team'] || '').trim();
+  const tijd = (d[place + '_tijd'] || '').trim();
+  const bijz = (d[place + '_bijz'] || '').trim();
+  return {naam, team, tijd, bijz};
+}
+
+function formatLine({naam, team, tijd}){
+  if(!naam && !team && !tijd) return '—';
+  const parts=[];
+  if(naam) parts.push(naam);
+  const meta=[];
+  if(team) meta.push(team);
+  if(tijd) meta.push(tijd);
+  if(meta.length) parts.push('(' + meta.join(' • ') + ')');
+  return parts.join(' ');
+}
+
+function render(mode){
+  const grid=document.getElementById('matrix-grid');
+  const note=document.getElementById('matrix-note');
+  const btnW=document.getElementById('btn-women');
+  const btnM=document.getElementById('btn-men');
+
+  btnW.classList.toggle('active', mode==='women');
+  btnM.classList.toggle('active', mode==='men');
+
+  const items = mode==='women' ? WOMEN : MEN;
+
+  grid.innerHTML='';
+  let missing = 0;
+
+  items.forEach(it=>{
+    const canonical = ScriptUtils.canonicalOnderdeel ? ScriptUtils.canonicalOnderdeel(it.onderdeel) : (it.onderdeel||'').toUpperCase();
+    const data = readPlacement(canonical, it.place);
+    const line = formatLine(data);
+    if(line==='—') missing++;
+
+    const cell=document.createElement('div');
+    cell.className='matrix-cell';
+    cell.innerHTML = `
+      <div class="matrix-top">
+        <div class="matrix-pos">${it.pos}</div>
+        <div class="matrix-label">${it.label}</div>
+      </div>
+      <div class="matrix-value">${line}</div>
+      <div class="matrix-actions">
+        <a class="mini-link" href="./form.html?onderdeel=${encodeURIComponent(it.onderdeel)}">Open</a>
+      </div>
+    `;
+    grid.appendChild(cell);
+  });
+
+  if(missing>0){
+    note.style.display='block';
+    note.textContent = `${missing} van de 15 plekken zijn nog leeg (formulieren nog niet ingevuld).`;
+  }else{
+    note.style.display='none';
+  }
+}
+
+document.getElementById('btn-women').addEventListener('click',()=>{
+  setModeInUrl('women'); render('women');
+});
+document.getElementById('btn-men').addEventListener('click',()=>{
+  setModeInUrl('men'); render('men');
+});
+
+const initial = getModeFromUrl();
+render(initial);
+</script></body></html>

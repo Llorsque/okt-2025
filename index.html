@@ -1,0 +1,13 @@
+
+<!doctype html><html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Huldiging Scripts | Onderdeel kiezen</title><link rel="stylesheet" href="./assets/styles.css"></head>
+<body><header class="header"><div class="header-inner"><div class="brand"><span class="dot"></span> Huldiging Scripts</div>
+<div class="toolbar"><a class="nav" href="./overzicht.html">Medaillespiegel</a><a class="nav" href="./matrix.html">Matrix</a><a class="nav" href="./edit.html">Teksten bewerken</a><a class="nav" href="./onderdelen.html">Onderdelen bewerken</a><a class="nav" href="./pr.html">PR-overzicht</a></div></div></header>
+<div class="container"><div class="card"><h1>Onderdeel kiezen</h1><p class="small">Kies een onderdeel om het formulier te openen.</p>
+<label for="onderdeel">Onderdeel</label><select id="onderdeel"></select><div style="height:10px"></div><button id="open">Open formulier</button></div></div>
+<footer>© 2025 – Huldiging Scripts</footer>
+<script src="./assets/app.js?v=exportall1"></script>
+<script>
+const sel=document.getElementById('onderdeel'); ScriptUtils.allOnderdeelKeys().forEach(o=>{const opt=document.createElement('option'); opt.value=o; opt.textContent=o; sel.appendChild(opt);});
+document.getElementById('open').addEventListener('click',()=>{location.href='form.html?onderdeel='+encodeURIComponent(sel.value);});
+</script></body></html>

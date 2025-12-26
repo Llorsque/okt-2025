@@ -1,0 +1,27 @@
+
+<!doctype html><html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Teksten bewerken</title><link rel="stylesheet" href="./assets/styles.css"></head>
+<body><header class="header"><div class="header-inner"><div class="brand"><span class="dot"></span> Teksten bewerken</div>
+<div class="toolbar"><a class="nav" href="./index.html">Onderdeel kiezen</a><a class="nav" href="./overzicht.html">Medaillespiegel</a><a class="nav" href="./matrix.html">Matrix</a><a class="nav" href="./pr.html">PR-overzicht</a><a class="nav" href="./onderdelen.html">Onderdelen bewerken</a></div></div></header>
+<div class="container"><div class="card"><h1>Algemene bundelteksten</h1>
+<p class="small">Gebruik **dubbele sterretjes** of __underscores__ voor <strong>vetgedrukte</strong> delen. Placeholders: {{onderdeel}}, {{tijd}}, {{team}}, {{naam}}, {{naam_functie}}.</p>
+<form id="edit-form"></form>
+<div style="display:flex;gap:10px;"><button id="save">Opslaan</button><button class="secondary" id="reset">Reset</button></div></div></div>
+<footer>© 2025 – Huldiging Scripts</footer>
+<script src="./assets/app.js?v=exportall1"></script>
+<script>
+const defs=ScriptUtils.getBundleTexts(); const fields=[
+['prijsuitreiking','Kop: Prijsuitreiking'],
+['brons_1','Brons regel 1'],['brons_2','Brons regel 2'],['brons_3','Brons regel 3'],
+['zilver_1','Zilver regel 1'],['zilver_2','Zilver regel 2'],['zilver_3','Zilver regel 3'],
+['goud_1','Goud regel 1'],['goud_2','Goud regel 2'],['goud_3','Goud regel 3'],['goud_4','Goud regel 4'],
+['uit_medailles','Uitreikers: medailles'],['uit_bloemen','Uitreikers: bloemen'],
+['volkslied','Volkslied'],['applaus','Applaus'],
+['podium_3','Podium: derde'],['podium_2','Podium: tweede'],['podium_1','Podium: eerste']
+];
+const form=document.getElementById('edit-form');
+fields.forEach(([k,l])=>{const c=document.createElement('div'); c.className='card'; c.innerHTML='<label>'+l+'</label><input type="text" data-k="'+k+'" value="'+(defs[k]||'')+'">'; form.appendChild(c);});
+document.getElementById('save').addEventListener('click',()=>{const out={}; document.querySelectorAll('input[data-k]').forEach(i=>out[i.dataset.k]=i.value); ScriptUtils.setBundleTexts(out); alert('Opgeslagen');});
+document.getElementById('reset').addEventListener('click',()=>{localStorage.removeItem('bundle_texts'); location.reload();});
+</script>
+</body></html>

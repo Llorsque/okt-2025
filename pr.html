@@ -1,0 +1,69 @@
+
+<!doctype html><html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PR-overzicht</title><link rel="stylesheet" href="./assets/styles.css"></head>
+<body>
+<header class="header"><div class="header-inner">
+  <div class="brand"><span class="dot"></span> PR-overzicht</div>
+  <div class="toolbar"><a class="nav" href="./index.html">Onderdeel kiezen</a><a class="nav" href="./overzicht.html">Medaillespiegel</a><a class="nav" href="./matrix.html">Matrix</a><a class="nav" href="./edit.html">Teksten bewerken</a><a class="nav" href="./onderdelen.html">Onderdelen bewerken</a></div>
+</div></header>
+
+<div class="container">
+  <div class="card">
+    <h1>Persoonlijke Records per onderdeel</h1>
+    <p class="small">Vul per onderdeel het <strong>aantal PR’s</strong> in. Alles wordt lokaal bewaard.</p>
+    <div style="overflow:auto">
+      <table class="table" id="pr-table">
+        <thead><tr><th>#</th><th>Onderdeel</th><th style="text-align:right">Aantal PR’s</th></tr></thead>
+        <tbody></tbody>
+        <tfoot><tr><td></td><td style="text-align:right;font-weight:700">Totaal</td><td id="pr-total" style="text-align:right;font-weight:700">0</td></tr></tfoot>
+      </table>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:12px;">
+      <button id="save">Opslaan</button>
+      <button class="secondary" id="clear">Alles leegmaken</button>
+    </div>
+  </div>
+</div>
+
+<footer>© 2025 – Huldiging Scripts</footer>
+<script src="./assets/app.js?v=exportall1"></script>
+<script>
+const STORAGE_KEY='pr_counts';
+function loadPR(){ try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}');}catch(e){return{}} }
+function savePR(map){ localStorage.setItem(STORAGE_KEY, JSON.stringify(map||{})); }
+function render(){
+  const tbody=document.querySelector('#pr-table tbody'); tbody.innerHTML='';
+  const onderdelen=ScriptUtils.allOnderdeelKeys();
+  const data=loadPR();
+  let total=0;
+  onderdelen.forEach((o,idx)=>{
+    const val=Number(data[o]||0);
+    total+=val;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td style="text-align:right;color:var(--muted)">${idx+1}.</td><td>${o}</td>
+      <td style="text-align:right"><input type="number" min="0" step="1" value="${val}" data-key="${o}" style="width:120px;text-align:right;padding:8px;border:1px solid var(--border);border-radius:10px"></td>`;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('pr-total').textContent=total;
+}
+function computeAndShowTotal(){
+  const inputs=[...document.querySelectorAll('input[data-key]')];
+  let total=0; inputs.forEach(i=>{ total+=Number(i.value||0); });
+  document.getElementById('pr-total').textContent=total;
+}
+document.addEventListener('input',e=>{
+  if(e.target.matches('input[data-key]')){ computeAndShowTotal(); }
+});
+document.getElementById('save').addEventListener('click',()=>{
+  const inputs=[...document.querySelectorAll('input[data-key]')];
+  const out={}; inputs.forEach(i=> out[i.dataset.key]=Number(i.value||0));
+  savePR(out);
+  const n=document.createElement('div'); n.textContent='PR-overzicht opgeslagen'; n.style.position='fixed'; n.style.right='18px'; n.style.bottom='18px'; n.style.background='var(--blue)'; n.style.color='white'; n.style.padding='10px 14px'; n.style.borderRadius='10px'; n.style.boxShadow='0 8px 20px rgba(17,24,39,.2)'; n.style.zIndex='9999'; n.style.fontWeight='600'; document.body.appendChild(n); setTimeout(()=>n.remove(),1400);
+});
+document.getElementById('clear').addEventListener('click',()=>{
+  localStorage.removeItem(STORAGE_KEY);
+  render();
+});
+render();
+</script>
+</body></html>

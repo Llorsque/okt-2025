@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Huldiging afstand – Bundels v4</title>
+  <link rel="stylesheet" href="./assets/styles.css">
+</head>
+<body data-page-key="huldiging-afstand-bundles-v4">
+  <header class="header">
+    <div class="header-inner">
+      <div class="brand"><span class="dot"></span> Huldiging afstand</div>
+      <div class="toolbar">
+        <button class="secondary" data-action="edit">Bewerken</button>
+        <button data-action="save">Opslaan</button>
+      <a class="nav" href="./onderdelen.html">Onderdelen bewerken</a></div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="card">
+      <h1>Invulblok</h1>
+      <form data-form="invulblok">
+        <fieldset>
+          <legend>Onderdeel</legend>
+          <label for="onderdeel">Afstand + categorie (bijv. 1500m – Vrouwen)</label>
+          <input id="onderdeel" data-key="onderdeel" type="text" placeholder="…">
+        </fieldset>
+
+        <fieldset>
+          <legend>Uitreikers</legend>
+          <div class="form-grid-2">
+            <div>
+              <label for="uitreiker-medailles-naam">Medailles – Naam</label>
+              <input id="uitreiker-medailles-naam" data-key="uitreiker_medailles_naam" type="text" placeholder="…">
+            </div>
+            <div>
+              <label for="uitreiker-medailles-functie">Medailles – Functie</label>
+              <input id="uitreiker-medailles-functie" data-key="uitreiker_medailles_functie" type="text" placeholder="…">
+            </div>
+            <div>
+              <label for="uitreiker-bloemen-naam">Bloemen – Naam</label>
+              <input id="uitreiker-bloemen-naam" data-key="uitreiker_bloemen_naam" type="text" placeholder="…">
+            </div>
+            <div>
+              <label for="uitreiker-bloemen-functie">Bloemen – Functie</label>
+              <input id="uitreiker-bloemen-functie" data-key="uitreiker_bloemen_functie" type="text" placeholder="…">
+            </div>
+          </div>
+          <div style="height:8px"></div>
+          <label for="uitreikers-extra"><strong>Extra bij uitreiken</strong> (optioneel)</label>
+          <input id="uitreikers-extra" data-key="uitreikers_extra" type="text" placeholder="bijv. Met dank aan de vrijwilligers van Thialf">
+        </fieldset>
+
+        <fieldset>
+          <legend>1e plaats</legend>
+          <div class="form-grid">
+            <div><label for="eerste-naam">Naam</label><input id="eerste-naam" data-key="eerste_naam" type="text" placeholder="…"></div>
+            <div><label for="eerste-tijd">Tijd</label><input id="eerste-tijd" data-key="eerste_tijd" type="text" placeholder="…"></div>
+            <div><label for="eerste-team">Team</label><input id="eerste-team" data-key="eerste_team" type="text" placeholder="…"></div>
+            <div><label for="eerste-bijz">Bijzonderheden</label><input id="eerste-bijz" data-key="eerste_bijz" type="text" placeholder="bijv. 10e nationale titel"></div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>2e plaats</legend>
+          <div class="form-grid">
+            <div><label for="tweede-naam">Naam</label><input id="tweede-naam" data-key="tweede_naam" type="text" placeholder="…"></div>
+            <div><label for="tweede-tijd">Tijd</label><input id="tweede-tijd" data-key="tweede_tijd" type="text" placeholder="…"></div>
+            <div><label for="tweede-team">Team</label><input id="tweede-team" data-key="tweede_team" type="text" placeholder="…"></div>
+            <div><label for="tweede-bijz">Bijzonderheden</label><input id="tweede-bijz" data-key="tweede_bijz" type="text" placeholder="…"></div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>3e plaats</legend>
+          <div class="form-grid">
+            <div><label for="derde-naam">Naam</label><input id="derde-naam" data-key="derde_naam" type="text" placeholder="…"></div>
+            <div><label for="derde-tijd">Tijd</label><input id="derde-tijd" data-key="derde_tijd" type="text" placeholder="…"></div>
+            <div><label for="derde-team">Team</label><input id="derde-team" data-key="derde_team" type="text" placeholder="…"></div>
+            <div><label for="derde-bijz">Bijzonderheden</label><input id="derde-bijz" data-key="derde_bijz" type="text" placeholder="…"></div>
+          </div>
+        </fieldset>
+      </form>
+    </div>
+
+    <div class="card">
+      <h1>Presentatietekst (bundels v4)</h1>
+      <div class="bundles"></div>
+    </div>
+  </div>
+
+  <footer>© 2025 – Huldiging Scripts</footer>
+  <script src="./assets/app.js?v=exportall1"></script>
+</body>
+</html>

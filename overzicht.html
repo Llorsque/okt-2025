@@ -1,0 +1,50 @@
+
+<!doctype html><html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Medaillespiegel</title><link rel="stylesheet" href="./assets/styles.css"></head>
+<body><header class="header"><div class="header-inner"><div class="brand"><span class="dot"></span> Medaillespiegel</div>
+<div class="toolbar"><a class="nav" href="./index.html">Onderdeel kiezen</a><a class="nav" href="./edit.html">Teksten bewerken</a><a class="nav" href="./onderdelen.html">Onderdelen bewerken</a><a class="nav" href="./pr.html">PR-overzicht</a><a class="nav" href="./matrix.html">Matrix</a></div></div></header>
+<div class="container">
+  <div class="card"><h1>Top 3 per onderdeel</h1><div id="per-onderdeel"></div></div>
+  <div class="card"><h1>Medailles per team</h1><div id="per-team"></div></div>
+</div>
+<footer>© 2025 – Huldiging Scripts</footer>
+<script src="./assets/app.js?v=exportall1"></script>
+<script>
+const onderdelen=ScriptUtils.allOnderdeelKeys();
+const perOnd=document.getElementById('per-onderdeel');
+const perTeam=document.getElementById('per-team');
+
+// Top 3 per onderdeel (use CAPS storage key)
+onderdelen.forEach(o=>{
+  const d=ScriptUtils.readData(o.toUpperCase());
+  const wrap=document.createElement('div');
+  const h2=document.createElement('h2'); h2.textContent=o; wrap.appendChild(h2);
+  function row(rank, naam, tijd, team){
+    const r=document.createElement('div'); r.className='row-onderdeel';
+    r.innerHTML = `<div class="rank">${rank}.</div><div class="naam">${naam||''}</div><div class="tijd">${tijd||''}</div><div class="team">${team||''}</div>`;
+    return r;
+  }
+  wrap.appendChild(row(1, d.eerste_naam, d.eerste_tijd, d.eerste_team));
+  wrap.appendChild(row(2, d.tweede_naam, d.tweede_tijd, d.tweede_team));
+  wrap.appendChild(row(3, d.derde_naam, d.derde_tijd, d.derde_team));
+  perOnd.appendChild(wrap);
+});
+
+// Medailles per team (use CAPS storage key)
+const tally={};
+onderdelen.forEach(o=>{
+  const d=ScriptUtils.readData(o.toUpperCase());
+  if(d.eerste_team){tally[d.eerste_team]=(tally[d.eerste_team]||{goud:0,zilver:0,brons:0}); tally[d.eerste_team].goud++;}
+  if(d.tweede_team){tally[d.tweede_team]=(tally[d.tweede_team]||{goud:0,zilver:0,brons:0}); tally[d.tweede_team].zilver++;}
+  if(d.derde_team){tally[d.derde_team]=(tally[d.derde_team]||{goud:0,zilver:0,brons:0}); tally[d.derde_team].brons++;}
+});
+
+const tbl=document.createElement('table'); tbl.className='table';
+const thead=document.createElement('thead'); thead.innerHTML='<tr><th>#</th><th>Team</th><th>Goud</th><th>Zilver</th><th>Brons</th></tr>'; tbl.appendChild(thead);
+const tbody=document.createElement('tbody');
+Object.entries(tally).sort((a,b)=>(b[1].goud-a[1].goud)||(b[1].zilver-a[1].zilver)||(b[1].brons-a[1].brons)).forEach(([team,c],idx)=>{
+  const tr=document.createElement('tr'); tr.innerHTML=`<td>${idx+1}.</td><td>${team}</td><td>${c.goud}</td><td>${c.zilver}</td><td>${c.brons}</td>`; tbody.appendChild(tr);
+});
+tbl.appendChild(tbody); perTeam.appendChild(tbl);
+</script>
+</body></html>
