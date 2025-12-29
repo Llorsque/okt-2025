@@ -103,7 +103,7 @@ function normalizeName(s){
 function countDuplicatesTop9(items){
   const seen = new Set();
   let total = 0;
-  items.filter(it => it.pos <= 6).forEach(it=>{
+  items.filter(it => it.pos <= 9).forEach(it=>{
     const canonical = ScriptUtils.canonicalOnderdeel ? ScriptUtils.canonicalOnderdeel(it.onderdeel) : (it.onderdeel||'').toUpperCase();
     const data = readPlacement(canonical, it.place);
     const name = normalizeName(data.naam);
@@ -127,7 +127,7 @@ function render(mode){
   const items = mode==='women' ? WOMEN : MEN;
 
   const dupCount = countDuplicatesTop9(items);
-  const dividerPos = Math.min(items.length, 6 + dupCount);
+  const dividerPos = Math.min(items.length, 9 + dupCount);
 
   grid.innerHTML='';
   let missing = 0;
