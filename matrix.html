@@ -100,10 +100,10 @@ function normalizeName(s){
   return (s||'').toLowerCase().replace(/\s+/g,' ').trim();
 }
 
-function countDuplicatesTop9(items){
+function countDuplicatesWithin(items, uptoPos){
   const seen = new Set();
   let total = 0;
-  items.filter(it => it.pos <= 9).forEach(it=>{
+  items.filter(it => it.pos <= uptoPos).forEach(it=>{
     const canonical = ScriptUtils.canonicalOnderdeel ? ScriptUtils.canonicalOnderdeel(it.onderdeel) : (it.onderdeel||'').toUpperCase();
     const data = readPlacement(canonical, it.place);
     const name = normalizeName(data.naam);
@@ -114,6 +114,23 @@ function countDuplicatesTop9(items){
   return Math.max(0, total - seen.size);
 }
 
+// Rode lijn staat standaard onder plek 9.
+// Elke dubbeling binnen de (meegenomen) plekken schuift de lijn 1 plek omlaag.
+// Als de lijn opschuift, tellen we opnieuw (dubbelingen binnen de nieuwe 'top'), totdat het stabiel is.
+function computeDividerPos(items){
+  const base = 9;
+  let pos = base;
+  // Itereer naar een vaste waarde: pos = base + duplicates(within pos)
+  for(let i=0;i<25;i++){
+    const d = countDuplicatesWithin(items, pos);
+    const next = Math.min(items.length, base + d);
+    if(next === pos) break;
+    // mag alleen omlaag schuiven (groter worden)
+    pos = Math.max(pos, next);
+    if(pos >= items.length) { pos = items.length; break; }
+  }
+  return pos;
+}
 
 function render(mode){
   const grid=document.getElementById('matrix-grid');
@@ -126,8 +143,7 @@ function render(mode){
 
   const items = mode==='women' ? WOMEN : MEN;
 
-  const dupCount = countDuplicatesTop9(items);
-  const dividerPos = Math.min(items.length, 9 + dupCount);
+  const dividerPos = computeDividerPos(items);
 
   grid.innerHTML='';
   let missing = 0;
