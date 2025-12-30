@@ -114,20 +114,55 @@ function countDuplicatesWithin(items, uptoPos){
   return Math.max(0, total - seen.size);
 }
 
+function buildAboveNameSet(items, uptoPos){
+  const s = new Set();
+  items.filter(it => it.pos <= uptoPos).forEach(it=>{
+    const canonical = ScriptUtils.canonicalOnderdeel ? ScriptUtils.canonicalOnderdeel(it.onderdeel) : (it.onderdeel||'').toUpperCase();
+    const data = readPlacement(canonical, it.place);
+    const name = normalizeName(data.naam);
+    if(!name) return;
+    s.add(name);
+  });
+  return s;
+}
+
+function isNextBelowDuplicate(items, dividerPos){
+  const nextPos = dividerPos + 1;
+  if(nextPos > items.length) return false;
+  const nextItem = items.find(it => it.pos === nextPos);
+  if(!nextItem) return false;
+  const canonical = ScriptUtils.canonicalOnderdeel ? ScriptUtils.canonicalOnderdeel(nextItem.onderdeel) : (nextItem.onderdeel||'').toUpperCase();
+  const data = readPlacement(canonical, nextItem.place);
+  const nextName = normalizeName(data.naam);
+  if(!nextName) return false;
+  const above = buildAboveNameSet(items, dividerPos);
+  return above.has(nextName);
+}
+
 // Rode lijn staat standaard onder plek 9.
-// Elke dubbeling binnen de (meegenomen) plekken schuift de lijn 1 plek omlaag.
-// Als de lijn opschuift, tellen we opnieuw (dubbelingen binnen de nieuwe 'top'), totdat het stabiel is.
+// Regels (per matrix, apart berekend):
+// 1) Elke dubbeling binnen de plekken bóven de lijn schuift de lijn 1 plek omlaag.
+//    Dit is iteratief: zodra de lijn schuift, telt de "top" mee en kan dit nog verder doorschuiven.
+// 2) Extra regel: als de éérstvolgende naam onder de rode lijn óók al boven de lijn voorkomt,
+//    schuift de rode lijn 1 plek omlaag.
+//    Als dat niet zo is, blijft alleen regel (1) van toepassing.
 function computeDividerPos(items){
   const base = 9;
-  let pos = base;
-  // Itereer naar een vaste waarde: pos = base + duplicates(within pos)
-  for(let i=0;i<25;i++){
-    const d = countDuplicatesWithin(items, pos);
-    const next = Math.min(items.length, base + d);
+  let pos = Math.min(items.length, base);
+
+  for(let i=0;i<50;i++){
+    // (1) dubbelingen binnen de huidige top
+    const dWithin = countDuplicatesWithin(items, pos);
+    let next = Math.min(items.length, base + dWithin);
+    if(next < pos) next = pos; // mag alleen omlaag schuiven
+
+    // (2) extra regel: alleen kijken naar de eerstvolgende plek onder de lijn
+    if(next < items.length && isNextBelowDuplicate(items, next)){
+      next = Math.min(items.length, next + 1);
+    }
+
     if(next === pos) break;
-    // mag alleen omlaag schuiven (groter worden)
-    pos = Math.max(pos, next);
-    if(pos >= items.length) { pos = items.length; break; }
+    pos = next;
   }
   return pos;
 }
@@ -183,13 +218,69 @@ function render(mode){
   }
 }
 
+// --- Live update ---
+// De matrix moet actueel blijven als je in een ander scherm/tab een naam/tijd invult.
+// We doen dit op twee manieren:
+// 1) storage-event (andere tab)
+// 2) lichte polling (zelfde tab / terug-navigeren zonder reload)
+let currentMode = null;
+let lastFingerprint = null;
+
+function fingerprintFor(mode){
+  const items = mode==='women' ? WOMEN : MEN;
+  let fp = mode;
+  for(const it of items){
+    const canon = ScriptUtils.canonicalOnderdeel ? ScriptUtils.canonicalOnderdeel(it.onderdeel) : (it.onderdeel||'').toUpperCase();
+    // Raw string is enough; we only compare changes.
+    fp += '|' + canon + ':' + (localStorage.getItem('fields:' + canon) || '');
+  }
+  return fp;
+}
+
+function ensureLiveUpdates(){
+  // storage event fires only across tabs/windows
+  window.addEventListener('storage',(e)=>{
+    if(!e || !e.key) return;
+    if(e.key.startsWith('fields:') || e.key==='onderdelen_list' || e.key==='bundle_texts'){
+      lastFingerprint = null;
+      if(currentMode) render(currentMode);
+    }
+  });
+
+  // Re-render when returning to this tab
+  window.addEventListener('focus',()=>{
+    lastFingerprint = null;
+    if(currentMode) render(currentMode);
+  });
+
+  document.addEventListener('visibilitychange',()=>{
+    if(!document.hidden){
+      lastFingerprint = null;
+      if(currentMode) render(currentMode);
+    }
+  });
+
+  // Poll: catches changes made in the same tab (e.g., SPA/back-forward cache cases)
+  setInterval(()=>{
+    if(!currentMode) return;
+    const fp = fingerprintFor(currentMode);
+    if(fp !== lastFingerprint){
+      lastFingerprint = fp;
+      render(currentMode);
+    }
+  }, 500);
+}
+
 document.getElementById('btn-women').addEventListener('click',()=>{
-  setModeInUrl('women'); render('women');
+  setModeInUrl('women'); currentMode='women'; render('women');
 });
 document.getElementById('btn-men').addEventListener('click',()=>{
-  setModeInUrl('men'); render('men');
+  setModeInUrl('men'); currentMode='men'; render('men');
 });
 
 const initial = getModeFromUrl();
+currentMode = initial;
 render(initial);
+lastFingerprint = fingerprintFor(currentMode);
+ensureLiveUpdates();
 </script></body></html>
